@@ -50,6 +50,8 @@ type Options struct {
 	DisallowPrivateIPMCP              bool     `usage:"Disallow MCP containers from connecting to private IPs" default:"true"`
 	DisallowLinkLocalMCP              bool     `usage:"Disallow MCP containers from connecting to link-local addresses" default:"true"`
 	MCPRuntimeBackend                 string   `usage:"The runtime backend to use for running MCP servers: docker, kubernetes, or k8s. Defaults to docker" default:"docker"`
+	MCPDockerHost                     string   `usage:"Host Obot connects to for MCP server ports published by the docker backend (default localhost)"`
+	MCPDockerPublishAddress           string   `usage:"Address the docker backend publishes MCP server ports on (default 127.0.0.1)"`
 	MCPSecretBindingAllowedLabel      string   `usage:"Kubernetes Secret label key required for admin UI secret-binding lookup and save-time validation" default:"obot.obot.ai/allow-secret-binding"`
 	MCPImagePullSecrets               []string `usage:"The name of the image pull secret to use for pulling MCP images"`
 	SingleUserIdleServerShutdownHours int      `usage:"The interval in hours to check for idle MCP servers designated to a single user and shut them down, set to -1 to disable shutdown" default:"24"`

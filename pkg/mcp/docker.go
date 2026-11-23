@@ -3,6 +3,7 @@ package mcp
 import (
 	"archive/tar"
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/rand"
 	"errors"
@@ -50,6 +51,8 @@ type dockerBackend struct {
 	client                 *client.Client
 	containerEnv           bool
 	network                string
+	mcpHost                string
+	mcpPublishAddress      string
 	httpListenPort         int
 	hostBaseURLWithPort    string
 	containerizedBaseImage string
@@ -81,10 +84,12 @@ func newDockerBackend(ctx context.Context, authEnabled bool, exposedPort int, op
 	}
 
 	d := &dockerBackend{
-		client:         cli,
-		containerEnv:   containerEnv,
-		network:        network,
-		httpListenPort: exposedPort,
+		client:            cli,
+		containerEnv:      containerEnv,
+		network:           network,
+		mcpHost:           opts.MCPDockerHost,
+		mcpPublishAddress: opts.MCPDockerPublishAddress,
+		httpListenPort:    exposedPort,
 		// JoinHostPort brackets an IPv6 address, which the local IP can be on an IPv6-only host.
 		hostBaseURLWithPort:    "http://" + net.JoinHostPort(host, strconv.Itoa(exposedPort)),
 		containerizedBaseImage: opts.MCPBaseImage,
@@ -224,15 +229,23 @@ func firstInterfaceIP(interfaceAddrs func() ([]net.Addr, error)) string {
 	return v6
 }
 
+// mcpHostOrDefault returns the host Obot connects to for published MCP server ports.
+func (d *dockerBackend) mcpHostOrDefault() string {
+	return cmp.Or(d.mcpHost, "localhost")
+}
+
 func (d *dockerBackend) remoteConfig(globalConfig RemoteMCPURLValidationConfig) (RemoteMCPURLValidationConfig, []string) {
+	allowedHosts := []string{fmt.Sprintf("localhost:%d", d.httpListenPort), strings.TrimPrefix(d.hostBaseURLWithPort, "http://")}
 	if d.containerEnv {
 		// If Obot is running in a container, then Obot communicates with the MCP containers via the Docker network IPs.
 		globalConfig.AllowPrivateIPMCP = true
 	} else {
-		// If Obot is not running in a container, then Obot communicates with the MCP containers via localhost.
+		// If Obot is not running in a container, then Obot communicates with the MCP containers via their published ports on the MCP host.
 		globalConfig.AllowLocalhostMCP = true
+		allowedHosts = append(allowedHosts, d.mcpHostOrDefault())
 	}
-	return globalConfig, []string{fmt.Sprintf("localhost:%d", d.httpListenPort), strings.TrimPrefix(d.hostBaseURLWithPort, "http://")}
+
+	return globalConfig, allowedHosts
 }
 
 func (d *dockerBackend) transformObotHostname(rawURL string) string {
@@ -935,7 +948,7 @@ func (d *dockerBackend) buildServerConfig(server ServerConfig, c *container.Summ
 
 		host = n.IPAddress
 	} else {
-		host = "localhost"
+		host = d.mcpHostOrDefault()
 
 		var err error
 		port, err = d.getHostPort(c, containerPort)
@@ -1120,7 +1133,7 @@ func (d *dockerBackend) createAndStartContainer(ctx context.Context, server Serv
 
 	// Host config with port bindings and volume mounts
 	hostConfig := &container.HostConfig{
-		PortBindings: map[nat.Port][]nat.PortBinding{nat.Port(containerPortStr): {{HostIP: "127.0.0.1"}}},
+		PortBindings: map[nat.Port][]nat.PortBinding{nat.Port(containerPortStr): {{HostIP: cmp.Or(d.mcpPublishAddress, "127.0.0.1")}}},
 		Mounts:       volumeMounts,
 		RestartPolicy: container.RestartPolicy{
 			Name: "unless-stopped",
@@ -1276,7 +1289,7 @@ func (d *dockerBackend) ensureServerReady(ctx context.Context, c *container.Summ
 			return fmt.Errorf("failed to get host port: %w", err)
 		}
 
-		host = "localhost"
+		host = d.mcpHostOrDefault()
 	}
 
 	if err = monitorContainerReadiness(ctx, time.Second,

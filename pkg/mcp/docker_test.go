@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -425,5 +426,23 @@ func TestApplyServerConfigToContainerConfigNoImageNoChanges(t *testing.T) {
 
 	if _, ok := config.Labels["mcp.file.env.keys.hash"]; ok {
 		t.Fatalf("did not expect mcp.file.env.keys.hash label to be set")
+	}
+}
+
+func TestDockerConfiguredMCPHost(t *testing.T) {
+	d := &dockerBackend{mcpHost: "docker"}
+
+	connection, err := d.buildServerConfig(ServerConfig{}, &container.Summary{
+		Ports: []container.Port{{PrivatePort: 8080, PublicPort: 18080}},
+	}, 8080, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if connection.URL != "http://docker:18080" {
+		t.Fatalf("URL = %q, want %q", connection.URL, "http://docker:18080")
+	}
+
+	if _, allowedHosts := d.remoteConfig(RemoteMCPURLValidationConfig{}); !slices.Contains(allowedHosts, "docker") {
+		t.Fatalf("allowed hosts %v do not contain the MCP host", allowedHosts)
 	}
 }

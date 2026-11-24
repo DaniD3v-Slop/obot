@@ -264,3 +264,14 @@ func TestPingFederateProfileRefresh(t *testing.T) {
 	f.expectFetches(t, 2)
 	assert.Equal(t, "First Name", stored.DisplayName)
 }
+
+// TestOIDCProfileRefresh checks that the OIDC auth provider's standard name and picture claims are applied.
+func TestOIDCProfileRefresh(t *testing.T) {
+	f := newProfileRefreshFixtureFor(t, "oidc-auth-provider")
+	f.deleteProfile("icon_url")
+	f.setProfile("picture", "https://id.example/oidc.png")
+
+	stored := f.refresh(t)
+	assert.Equal(t, "First Name", stored.DisplayName)
+	assert.Equal(t, "https://id.example/oidc.png", stored.IconURL)
+}

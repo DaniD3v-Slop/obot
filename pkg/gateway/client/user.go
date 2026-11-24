@@ -45,6 +45,7 @@ var (
 	profileIconURLs = map[string]func(profile map[string]any) (string, bool){
 		"github-auth-provider":   profileString("avatar_url"),
 		"google-auth-provider":   profileString("picture"),
+		"oidc-auth-provider":     profileString("picture"),
 		"entra-auth-provider":    profileString("icon_url"),
 		"auth0-auth-provider":    profileString("icon_url"),
 		"keycloak-auth-provider": profileString("icon_url"),
@@ -527,7 +528,8 @@ func (c *Client) UpdateProfileIfNeeded(ctx context.Context, user *types.User, au
 				}
 			}
 		}
-	case "entra-auth-provider", "auth0-auth-provider", "keycloak-auth-provider", "pingfederate-auth-provider":
+	case "entra-auth-provider", "auth0-auth-provider", "keycloak-auth-provider", "pingfederate-auth-provider",
+		"oidc-auth-provider":
 		if displayName, ok := profile["name"].(string); ok && displayName != "" {
 			user.DisplayName = displayName
 		}

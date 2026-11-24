@@ -25,7 +25,7 @@
 		ProviderParameter,
 		ResidualGroupData
 	} from '$lib/services/admin/types.js';
-	import { errors, license, profile, version } from '$lib/stores';
+	import { errors, license, profile } from '$lib/stores';
 	import { adminConfigStore } from '$lib/stores/adminConfig.svelte.js';
 	import { clearUrlParams, resolve } from '$lib/url';
 	import { TriangleAlert, Info, CircleAlert, ArrowLeft, Trash2 } from '@lucide/svelte';
@@ -76,7 +76,10 @@
 			return a.name.localeCompare(b.name);
 		});
 	}
-	let sortedAuthProviders = $derived(sortAuthProviders(authProviders));
+	// Providers that need an Obot license stay hidden unless one is already configured.
+	let sortedAuthProviders = $derived(
+		sortAuthProviders(authProviders.filter((p) => p.configured || !p.entitlementsMissing))
+	);
 	let providerConfigure = $state<ReturnType<typeof ProviderConfigure>>();
 	let configuringAuthProvider = $state<AuthProvider>();
 	let configuringAuthProviderValues = $state<Record<string, string>>();
@@ -620,28 +623,6 @@
 		}
 	}
 
-	async function handleCommunitySubmit() {
-		if (!licenseRequiredProvider) return;
-
-		const newVersion = await UserService.getVersion();
-		version.initialize(newVersion);
-
-		authProviders = await AdminService.listAuthProviders();
-		adminConfigStore.updateAuthProviders(authProviders);
-
-		const updatedMatch = authProviders.find(
-			(provider) => provider.id === licenseRequiredProvider?.id
-		);
-
-		if (updatedMatch) {
-			handleClickConfigure(updatedMatch);
-		} else {
-			errors.append(m.identity_access_auth_providers_fetch_config_failed());
-		}
-
-		licenseRequiredProvider = undefined;
-	}
-
 	async function handleClickConfigure(authProvider: AuthProvider) {
 		if (authProvider.entitlementsMissing) {
 			licenseRequiredProvider = authProvider;
@@ -1119,9 +1100,5 @@
 
 <LicenseProviderDialog
 	bind:provider={licenseRequiredProvider}
-	allowSignup={!licenseRequiredProvider?.configured}
 	licenseKey={license.current.licenseKey}
-	endpoint={AdminService.createCommunityLicense}
-	onSubmit={handleCommunitySubmit}
-	signUpMessage={m.identity_access_auth_providers_signup_message()}
 />

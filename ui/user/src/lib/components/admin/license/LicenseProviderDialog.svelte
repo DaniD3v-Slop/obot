@@ -1,31 +1,18 @@
 <script lang="ts">
 	import { m } from '$lib/i18n';
 	import type { BaseProvider } from '$lib/services';
-	import type { CommunityLicenseEnrollment } from '$lib/services/admin/types';
 	import { darkMode } from '$lib/stores';
 	import { clearUrlParams } from '$lib/url';
 	import Confirm from '../../Confirm.svelte';
-	import CommunitySignUpForm from './CommunitySignUpForm.svelte';
 	import { CircleAlert, TriangleAlert } from '@lucide/svelte';
 	import { twMerge } from 'tailwind-merge';
 
 	interface Props {
 		provider?: BaseProvider;
 		licenseKey?: string;
-		allowSignup?: boolean;
-		onSubmit?: (response: unknown) => Promise<void> | void;
-		endpoint?: (data: CommunityLicenseEnrollment) => Promise<unknown>;
-		signUpMessage?: string;
 	}
 
-	let {
-		provider = $bindable(),
-		licenseKey,
-		allowSignup,
-		onSubmit,
-		endpoint,
-		signUpMessage
-	}: Props = $props();
+	let { provider = $bindable(), licenseKey }: Props = $props();
 </script>
 
 <Confirm
@@ -36,6 +23,7 @@
 		clearUrlParams(['provider']);
 	}}
 	cancelText={m.core_close()}
+	note=""
 >
 	{#snippet titleContent()}
 		{#if provider}
@@ -55,37 +43,16 @@
 		{/if}
 	{/snippet}
 	{#snippet msgContent()}
-		{#if !allowSignup}
-			<div class="flex items-center gap-2">
-				{#if provider?.configured}
-					<TriangleAlert class="size-4 text-warning" />
-					<h4 class="font-semibold text-base">
-						{licenseKey ? m.platform_license_notice_invalid() : m.platform_license_notice_missing()}
-					</h4>
-				{:else}
-					<CircleAlert class="size-4 text-muted-content" />
-					<h4 class="font-semibold text-base">{m.platform_license_notice_required()}</h4>
-				{/if}
-			</div>
-		{/if}
-	{/snippet}
-	{#snippet note()}
-		{#if provider}
-			{#if allowSignup}
-				<CommunitySignUpForm {endpoint} {onSubmit} {signUpMessage} />
-			{:else if provider?.configured}
-				<p>
-					{m.platform_license_notice_invalid_access_prefix({ name: provider.name })}
-					<a href="mailto:info@obot.ai" class="text-link">info@obot.ai</a
-					>{m.platform_license_notice_invalid_access_suffix()}
-				</p>
+		<div class="flex items-center gap-2">
+			{#if provider?.configured}
+				<TriangleAlert class="size-4 text-warning" />
+				<h4 class="font-semibold text-base">
+					{licenseKey ? m.platform_license_notice_invalid() : m.platform_license_notice_missing()}
+				</h4>
 			{:else}
-				<p>
-					{m.platform_license_notice_required_prefix({ name: provider.name })}
-					<a href="mailto:info@obot.ai" class="text-link">info@obot.ai</a
-					>{m.platform_license_notice_required_suffix()}
-				</p>
+				<CircleAlert class="size-4 text-muted-content" />
+				<h4 class="font-semibold text-base">{m.platform_license_notice_required()}</h4>
 			{/if}
-		{/if}
+		</div>
 	{/snippet}
 </Confirm>

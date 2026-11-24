@@ -51,6 +51,12 @@
 				false)
 	);
 
+	// The resolve dialog only offers to unconfigure auth providers that need a license.
+	let hasAuthProviderViolation = $derived(
+		version.current.licenseEntitlementViolations?.some(
+			(violation) => violation.type === 'authProvider'
+		)
+	);
 	let hasUserLimitViolation = $derived(
 		version.current.licenseEntitlementViolations?.some(
 			(violation) => violation.type === 'userLimit'
@@ -118,25 +124,20 @@
 				<ShieldAlert class="text-warning size-4 shrink-0" />
 				<p class="text-xs">
 					{hasUserLimitViolation
-						? m.platform_license_notice_banner_at_limit({ limit: userLimitText })
-						: m.platform_license_notice_banner_almost_at_limit({ limit: userLimitText })}
+						? m.platform_license_notice_notice_at_limit({ limit: userLimitText })
+						: m.platform_license_notice_notice_almost_at_limit({ limit: userLimitText })}
 				</p>
 			</div>
-			<div class="flex items-center gap-2">
-				<button class="btn btn-xs btn-warning" onclick={() => resolveLicenseDialog?.open()}>
-					{m.platform_license_notice_resolve()}
+			{#if !hasUserLimitViolation}
+				<button
+					class="btn btn-circle btn-ghost btn-xs w-fit h-fit p-0.5"
+					onclick={handleDismissUserLimitBanner}
+					type="button"
+					aria-label={m.platform_license_notice_dismiss_user_limit_banner()}
+				>
+					<X class="size-3" />
 				</button>
-				{#if !hasUserLimitViolation}
-					<button
-						class="btn btn-circle btn-ghost btn-xs w-fit h-fit p-0.5"
-						onclick={handleDismissUserLimitBanner}
-						type="button"
-						aria-label={m.platform_license_notice_dismiss_user_limit_banner()}
-					>
-						<X class="size-3" />
-					</button>
-				{/if}
-			</div>
+			{/if}
 		</div>
 	</div>
 {:else if !warnUserLimit && !planViolationsOnly}
@@ -163,7 +164,7 @@
 				<a class="btn btn-xs btn-warning" href={resolve('/admin/platform?view=license')}>
 					{m.platform_license_notice_view_plan()}
 				</a>
-			{:else if profile.current.hasAdminAccess?.()}
+			{:else if profile.current.hasAdminAccess?.() && hasAuthProviderViolation}
 				<button class="btn btn-xs btn-warning" onclick={() => resolveLicenseDialog?.open()}>
 					{m.platform_license_notice_resolve()}
 				</button>
@@ -174,4 +175,4 @@
 	{@render fallback()}
 {/if}
 
-<LicenseResolveDialog bind:this={resolveLicenseDialog} {warnUserLimit} />
+<LicenseResolveDialog bind:this={resolveLicenseDialog} />

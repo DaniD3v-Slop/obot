@@ -227,7 +227,7 @@ describe('VMcpTester', () => {
 		await expect.element(page.getByRole('region', { name: 'Chat composer' })).toBeVisible();
 	});
 
-	it('requires a valid license when no model provider is configured', async () => {
+	it('shows Chat as unavailable without a license or model provider', async () => {
 		await renderVMcpTester(
 			{
 				models: [],
@@ -237,20 +237,14 @@ describe('VMcpTester', () => {
 			{ tab: 'chat' }
 		);
 
+		await expect.element(page.getByText('Chat unavailable', { exact: true })).toBeVisible();
+		await expect
+			.element(page.getByText(/The chat feature is managed by your administrator/))
+			.toBeVisible();
 		await expect
 			.element(page.getByRole('heading', { name: 'Unlock MCP Inspector Chat', exact: true }))
-			.toBeVisible();
-		await expect
-			.element(
-				page.getByText(
-					/Register to get free access to the MCP Inspector Chat, powered by Obot’s model service/
-				)
-			)
-			.toBeVisible();
-		await expect
-			.element(page.getByRole('link', { name: 'configuring your own model provider' }))
-			.toHaveAttribute('href', '/models?view=providers');
-		await expect.element(page.getByRole('button', { name: 'Register' })).toBeVisible();
+			.not.toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Register' })).not.toBeInTheDocument();
 	});
 
 	it('keeps the default model alias message when a model provider is configured', async () => {

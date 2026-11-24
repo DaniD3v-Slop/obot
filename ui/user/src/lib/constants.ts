@@ -457,5 +457,3 @@ export const MCP_FILTERS_FIELD_IDS = {
 	runtimeSelector: 'filter-runtime-selector',
 	saveBtn: 'filter-save-btn'
 };
-
-export const COMMUNITY_SIGNUP_BANNER_COPY = m.core_community_signup_banner();

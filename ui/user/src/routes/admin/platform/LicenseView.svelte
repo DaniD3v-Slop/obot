@@ -4,11 +4,8 @@
 	import Confirm from '$lib/components/Confirm.svelte';
 	import ResponsiveDialog from '$lib/components/ResponsiveDialog.svelte';
 	import SensitiveInput from '$lib/components/SensitiveInput.svelte';
-	import CommunitySignUpForm from '$lib/components/admin/license/CommunitySignUpForm.svelte';
-	import CommunitySignupPanel from '$lib/components/admin/license/CommunitySignupPanel.svelte';
 	import UserLimitNotice from '$lib/components/admin/license/UserLimitNotice.svelte';
-	import BetaLogo from '$lib/components/navbar/BetaLogo.svelte';
-	import { COMMUNITY_SIGNUP_BANNER_COPY, PAGE_TRANSITION_DURATION } from '$lib/constants';
+	import { PAGE_TRANSITION_DURATION } from '$lib/constants';
 	import { parseErrorContent } from '$lib/errors';
 	import { getLocale, m } from '$lib/i18n';
 	import { reloadPage } from '$lib/navigation';
@@ -20,7 +17,6 @@
 	import {
 		CircleAlert,
 		CreditCard,
-		ExternalLink,
 		KeyRound,
 		LoaderCircle,
 		Lock,
@@ -70,9 +66,6 @@
 			Boolean(subscription?.selfService) &&
 			!isAdminReadonly &&
 			(profile.current.isOwner?.() ?? false)
-	);
-	let showEnterpriseCTA = $derived(
-		!billing && !isAdminReadonly && (!hasValidLicense || isCommunityEdition)
 	);
 	let showUserLimitNotice = $derived(
 		!billing && !isAdminReadonly && validateVersionUserLimit(version.current)
@@ -380,32 +373,6 @@
 		</div>
 	{/if}
 
-	{#if showEnterpriseCTA}
-		<aside
-			class="flex flex-col gap-4 rounded-box bg-primary p-4 text-primary-content shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6"
-			aria-labelledby="enterprise-cta-heading"
-		>
-			<div class="flex min-w-0 flex-col gap-1">
-				<h2 id="enterprise-cta-heading" class="text-lg font-semibold tracking-tight">
-					{m.platform_license_upgrade()}
-				</h2>
-				<p class="max-w-md text-sm font-light text-primary-content/85">
-					{m.platform_license_upgrade_description()}
-				</p>
-			</div>
-			<a
-				href="https://obot.ai/contact-us/"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="btn bg-white text-black hover:bg-white/90"
-			>
-				{m.platform_license_contact_us()}
-				<ExternalLink class="size-4" aria-hidden="true" />
-				<span class="sr-only">{m.platform_opens_new_tab()}</span>
-			</a>
-		</aside>
-	{/if}
-
 	<section class="paper gap-1.5">
 		<div class="flex items-center justify-between gap-4">
 			<h4 class="flex items-center gap-2 font-semibold">
@@ -592,28 +559,6 @@
 			</button>
 		{/if}
 	</div>
-
-	{#if !billing && !isAdminReadonly && !hasLicenseKey && !isCommunityEdition}
-		<CommunitySignupPanel as="aside" class="mx-auto md:max-w-md" labelledBy="community-cta-heading">
-			<div class="flex flex-col gap-4 p-4 sm:p-6">
-				<BetaLogo class="mx-auto" />
-				<p class="max-w-md text-sm font-light">
-					{COMMUNITY_SIGNUP_BANNER_COPY}
-				</p>
-				<div
-					class="rounded-xl border border-base-300/80 bg-base-100/80 p-4 shadow-sm backdrop-blur-sm"
-				>
-					<CommunitySignUpForm
-						endpoint={AdminService.createCommunityLicense}
-						onSubmit={reloadPage}
-						showHeader={false}
-						idPrefix="license-community"
-						disabled={isAdminReadonly}
-					/>
-				</div>
-			</div>
-		</CommunitySignupPanel>
-	{/if}
 </div>
 
 <ResponsiveDialog bind:this={updateLicenseDialog} title={updateLicenseTitle} class="max-w-md">

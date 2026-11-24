@@ -121,7 +121,6 @@ import type {
 	BillingSession,
 	License,
 	LicenseManifest,
-	CommunityLicenseEnrollment,
 	LLMAuditLog,
 	LLMAuditLogURLFilters,
 	EgressAuditLog,
@@ -2279,13 +2278,6 @@ export async function updateLicense(
 
 export async function manageBilling(opts?: { dontLogErrors?: boolean }): Promise<BillingSession> {
 	return (await doPost('/license/manage', {}, opts)) as BillingSession;
-}
-
-export async function createCommunityLicense(
-	enrollment: CommunityLicenseEnrollment,
-	opts?: { fetch?: Fetcher; dontLogErrors?: boolean }
-): Promise<License> {
-	return (await doPost('/license/community', enrollment, opts)) as License;
 }
 
 // MDM configurations

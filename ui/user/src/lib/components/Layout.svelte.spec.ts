@@ -1,5 +1,4 @@
 import { page as appPage } from '$app/state';
-import { COMMUNITY_SIGNUP_BANNER_COPY } from '$lib/constants';
 import { Group } from '$lib/services';
 import type { AuthProvider, License } from '$lib/services/admin/types';
 import type { Profile, Version } from '$lib/services/user/types';
@@ -417,17 +416,6 @@ describe('Layout.svelte', () => {
 				.element(page.getByRole('button', { name: 'Dismiss SCIM setup banner', exact: true }))
 				.not.toBeInTheDocument();
 		});
-
-		it('shows instead of the community signup banner', async () => {
-			worker.use(http.get('/api/auth-providers', () => HttpResponse.json({ items: [okta()] })));
-			await adminConfigStore.refresh();
-			await renderLayout([Group.OWNER, Group.ADMIN], {}, {}, owner);
-
-			await expect.element(continueLink()).toBeVisible();
-			await expect
-				.element(page.getByText(COMMUNITY_SIGNUP_BANNER_COPY, { exact: true }))
-				.not.toBeInTheDocument();
-		});
 	});
 
 	describe('SCIM token banner', () => {
@@ -556,28 +544,35 @@ describe('Layout.svelte', () => {
 		});
 	});
 
-	describe('community signup banner', () => {
-		const copy = COMMUNITY_SIGNUP_BANNER_COPY;
+	describe('user limit banner', () => {
+		it('warns administrators at the user limit without an upgrade offer', async () => {
+			await renderLayout([Group.ADMIN], {
+				userCount: 100,
+				userLimit: 100,
+				licenseEntitlementViolations: [
+					{
+						type: 'userLimit',
+						namespace: 'default',
+						name: 'users'
+					}
+				]
+			});
 
-		it('shows for administrators without a community or enterprise license', async () => {
+			await expect
+				.element(page.getByText("You're at the user limit. (100/100)", { exact: true }))
+				.toBeVisible();
+			await expect.element(page.getByText(/Upgrade to Obot Enterprise/)).not.toBeInTheDocument();
+			await expect
+				.element(page.getByRole('button', { name: 'Resolve', exact: true }))
+				.not.toBeInTheDocument();
+		});
+	});
+
+	describe('community signup banner', () => {
+		it('does not show, even for administrators without a license', async () => {
 			await renderLayout([Group.ADMIN]);
 
-			await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
-			const register = page.getByRole('link', { name: 'Register', exact: true });
-			await expect.element(register).toBeVisible();
-			await expect.element(register).toHaveAttribute('href', '/admin/platform?view=license');
-		});
-
-		it('does not show for basic users', async () => {
-			await renderLayout([Group.USER]);
-
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
-		});
-
-		it('does not show for auditors', async () => {
-			await renderLayout([Group.USER, Group.AUDITOR]);
-
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
+			await expect.element(page.getByText(/Obot Community Newsletter/)).not.toBeInTheDocument();
 		});
 
 		it('does not show license actions for auditors with violations', async () => {
@@ -595,74 +590,6 @@ describe('Layout.svelte', () => {
 				.element(page.getByRole('button', { name: 'Resolve', exact: true }))
 				.not.toBeInTheDocument();
 			await expect.element(page.getByText(/Upgrade to Obot Enterprise/)).not.toBeInTheDocument();
-		});
-
-		it('does not show when a community license is present', async () => {
-			await renderLayout(
-				[Group.ADMIN],
-				{},
-				{
-					licenseKey: 'community-license-key',
-					entitlements: { ...getLicenseResponse.entitlements, community: true }
-				}
-			);
-
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
-		});
-
-		it('does not show when an enterprise license is present', async () => {
-			await renderLayout(
-				[Group.ADMIN],
-				{ enterprise: true },
-				{
-					licenseKey: 'enterprise-license-key',
-					entitlements: { ...getLicenseResponse.entitlements, enterprise: true }
-				}
-			);
-
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
-		});
-
-		it('can be dismissed for this device', async () => {
-			await renderLayout([Group.ADMIN]);
-
-			const dismiss = page.getByRole('button', {
-				name: 'Dismiss community signup banner',
-				exact: true
-			});
-			await expect.element(dismiss).toBeVisible();
-			// Native DOM click: Playwright actionability fails on driver.js overlays.
-			const el = await dismiss.element();
-			if (!(el instanceof HTMLElement)) {
-				throw new Error('Expected dismiss control to be an HTMLElement');
-			}
-			el.click();
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
-
-			await renderLayout([Group.ADMIN]);
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
-		});
-
-		it('stays dismissed when dismissed after the profile was created', async () => {
-			localStorage.setItem(
-				'@obot/dismiss-community-signup-banner',
-				JSON.stringify({ dismissedAt: '2026-08-10T00:00:00.000Z' })
-			);
-
-			await renderLayout([Group.ADMIN], {}, {}, { created: '2026-08-04T16:58:40.000Z' });
-
-			await expect.element(page.getByText(copy, { exact: true })).not.toBeInTheDocument();
-		});
-
-		it('shows again when the profile was created after the banner was dismissed', async () => {
-			localStorage.setItem(
-				'@obot/dismiss-community-signup-banner',
-				JSON.stringify({ dismissedAt: '2020-01-01T00:00:00.000Z' })
-			);
-
-			await renderLayout([Group.ADMIN], {}, {}, { created: '2026-08-04T16:58:40.000Z' });
-
-			await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
 		});
 	});
 });

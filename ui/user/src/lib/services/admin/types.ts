@@ -699,12 +699,6 @@ export interface LicenseManifest {
 	licenseKey: string;
 }
 
-export interface CommunityLicenseEnrollment {
-	name: string;
-	email: string;
-	company?: string;
-}
-
 // LLM audit logs
 
 // LLMAuditGuardrailFinding is what one guardrail policy did to an LLM request. It never

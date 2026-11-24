@@ -1563,45 +1563,25 @@ describe('Identity & Access Page', () => {
 		});
 
 		describe('license required auth provider', () => {
-			it('offers Obot Community signup in the license dialog on Configure', async () => {
-				await renderIdentityAccessPage({ authProviders: [entraProvider] });
+			it('hides providers that need a license until one is configured', async () => {
+				await renderIdentityAccessPage({ authProviders: [googleProvider, entraProvider] });
 
 				await expect
-					.element(
-						providerCard('Microsoft Entra').getByText('Registration Required', { exact: true })
-					)
-					.toBeVisible();
-
-				await providerCard('Microsoft Entra')
-					.getByRole('button', { name: 'Configure', exact: true })
-					.click();
-
-				const signup = page.getByRole('dialog').filter({ hasText: 'Get Access Now!' });
-				await expect
-					.element(signup.getByRole('heading', { name: 'Microsoft Entra', exact: true }))
+					.element(page.getByRole('heading', { name: 'Google', exact: true }))
 					.toBeVisible();
 				await expect
-					.element(signup.getByRole('heading', { name: 'Get Access Now!', exact: true }))
-					.toBeVisible();
-				await expect
-					.element(
-						signup.getByText(
-							/Register to get free access to all additional providers supported by Obot/,
-							{
-								exact: false
-							}
-						)
-					)
-					.toBeVisible();
-				await expect.element(signup.getByLabelText('Name', { exact: true })).toBeVisible();
-				await expect.element(signup.getByLabelText('Email', { exact: true })).toBeVisible();
-				await expect.element(signup.getByLabelText('Company', { exact: false })).toBeVisible();
-				await expect
-					.element(signup.getByRole('button', { name: 'Register', exact: true }))
-					.toBeVisible();
-				await expect
-					.element(page.getByText('Set Up Microsoft Entra', { exact: true }))
+					.element(page.getByRole('heading', { name: 'Microsoft Entra', exact: true }))
 					.not.toBeInTheDocument();
+			});
+
+			it('keeps a configured provider that needs a license', async () => {
+				await renderIdentityAccessPage({
+					authProviders: [{ ...entraProvider, configured: true }]
+				});
+
+				await expect
+					.element(page.getByRole('heading', { name: 'Microsoft Entra', exact: true }))
+					.toBeVisible();
 			});
 		});
 

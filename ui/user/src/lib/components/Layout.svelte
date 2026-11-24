@@ -60,7 +60,6 @@
 	import { localState } from '$lib/runes/localState.svelte';
 	import { Group } from '$lib/services';
 	import {
-		license as licenseStore,
 		profile,
 		responsive,
 		version,
@@ -73,7 +72,6 @@
 	import DotDotDot from './DotDotDot.svelte';
 	import InfoTooltip from './InfoTooltip.svelte';
 	import SetupSplashDialog from './admin/SetupSplashDialog.svelte';
-	import CommunitySignupBanner from './admin/license/CommunitySignupBanner.svelte';
 	import LicenseViolationBanner from './admin/license/LicenseViolationBanner.svelte';
 	import SCIMSetupBanner from './admin/scim/SCIMSetupBanner.svelte';
 	import SCIMTokenExpiryBanner from './admin/scim/SCIMTokenExpiryBanner.svelte';
@@ -401,72 +399,6 @@
 		} satisfies BannerDismissState;
 	}
 
-	const COMMUNITY_SIGNUP_BANNER_KEY = '@obot/dismiss-community-signup-banner';
-	let communitySignupBannerDismissed = localState<BannerDismissState | undefined>(
-		COMMUNITY_SIGNUP_BANNER_KEY,
-		undefined,
-		{
-			parse: (value) => {
-				if (!value) return undefined;
-				try {
-					const parsed = JSON.parse(value) as unknown;
-					if (parsed && typeof parsed === 'object') {
-						const dismissedAt = (parsed as BannerDismissState).dismissedAt;
-						return {
-							dismissedAt: typeof dismissedAt === 'string' ? dismissedAt : undefined
-						} satisfies BannerDismissState;
-					}
-					return undefined;
-				} catch {
-					return undefined;
-				}
-			}
-		}
-	);
-
-	function handleDismissCommunitySignupBanner() {
-		communitySignupBannerDismissed.current = {
-			dismissedAt: new Date().toISOString()
-		} satisfies BannerDismissState;
-	}
-
-	function isCommunitySignupDismissedForCurrentProfile() {
-		const dismissedAt = communitySignupBannerDismissed.current?.dismissedAt;
-		const dismissedDate = dismissedAt ? new Date(dismissedAt) : undefined;
-		const hasValidDismissedAt =
-			dismissedDate !== undefined && !Number.isNaN(dismissedDate.getTime());
-		if (!hasValidDismissedAt) return false;
-
-		const profileCreatedMs = profile.current.created
-			? new Date(profile.current.created).getTime()
-			: undefined;
-		if (
-			profileCreatedMs === undefined ||
-			Number.isNaN(profileCreatedMs) ||
-			profileCreatedMs < dismissedDate.getTime()
-		) {
-			return true;
-		}
-
-		return false;
-	}
-
-	const hasCommunityOrEnterpriseLicense = $derived.by(() => {
-		// Obot Cloud is licensed by billing and never needs a community license.
-		if (version.current.billingEnabled) return true;
-		if (version.current.enterprise || version.current.community || licenseStore.current.enterprise)
-			return true;
-		const { community, enterprise } = licenseStore.current.entitlements;
-		return community || enterprise;
-	});
-
-	const canShowCommunitySignup = $derived.by(() => {
-		if (!(profile.current.isAdmin?.() || profile.current.isBootstrapUser?.())) return false;
-		if (hasCommunityOrEnterpriseLicense) return false;
-		if (!communitySignupBannerDismissed.isReady) return false;
-		return !isCommunitySignupDismissedForCurrentProfile();
-	});
-
 	// The configured auth provider while it provisions users and groups through SCIM and SCIM is not
 	// enforced yet. Its setup continues on the SCIM sub-tab, which is where an Owner who just signed in
 	// for the first time, from Owner Setup, a switch, or an owner email, is sent from here. Its banner
@@ -632,8 +564,6 @@
 					/>
 				{:else if unfinishedSCIMProvider}
 					<SCIMSetupBanner providerName={unfinishedSCIMProvider.name} />
-				{:else if canShowCommunitySignup}
-					<CommunitySignupBanner onDismiss={handleDismissCommunitySignupBanner} />
 				{/if}
 				<Navbar
 					class={twMerge('dark:bg-base-200 border-b border-base-300', classes?.navbar)}

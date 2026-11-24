@@ -366,27 +366,21 @@ describe('MCP Tester page', () => {
 		expect(requests.mock.calls[0][0]).not.toHaveProperty('license');
 	});
 
-	it('requires a valid license when no provider is configured', async () => {
+	it('shows Chat as unavailable without a license or provider', async () => {
 		await renderTester('chat', {}, undefined, {
 			models: [],
 			defaultModelAliases: [],
 			version: { hasModelProvider: false, hasValidLicense: false }
 		});
 
+		await expect.element(page.getByText('Chat unavailable', { exact: true })).toBeVisible();
+		await expect
+			.element(page.getByText(/The chat feature is managed by your administrator/))
+			.toBeVisible();
 		await expect
 			.element(page.getByRole('heading', { name: 'Unlock MCP Inspector Chat', exact: true }))
-			.toBeVisible();
-		await expect
-			.element(
-				page.getByText(
-					/Register to get free access to the MCP Inspector Chat, powered by Obot’s model service/
-				)
-			)
-			.toBeVisible();
-		await expect
-			.element(page.getByRole('link', { name: 'configuring your own model provider' }))
-			.toHaveAttribute('href', '/models?view=providers');
-		await expect.element(page.getByRole('button', { name: 'Register' })).toBeVisible();
+			.not.toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Register' })).not.toBeInTheDocument();
 		await expect
 			.element(page.getByRole('region', { name: 'Chat composer' }))
 			.not.toBeInTheDocument();

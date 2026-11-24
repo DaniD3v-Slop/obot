@@ -276,7 +276,7 @@ describe('Platform Page', () => {
 				.not.toBeInTheDocument();
 		});
 
-		it('renders enterprise CTA when no license is present', async () => {
+		it('shows no Enterprise upgrade or Community registration without a license', async () => {
 			await renderPlatformPage({ license: getLicenseResponse });
 
 			await expect
@@ -284,27 +284,8 @@ describe('Platform Page', () => {
 				.toBeVisible();
 			await expect
 				.element(page.getByRole('heading', { name: 'Upgrade to Obot Enterprise', exact: true }))
-				.toBeVisible();
-			await expect.element(page.getByRole('link', { name: /Contact Us/i })).toBeVisible();
-		});
-
-		it('renders enterprise CTA when community license is present', async () => {
-			await renderPlatformPage({
-				license: {
-					...getLicenseResponse,
-					licenseKey: 'community-license-key',
-					entitlements: { ...getLicenseResponse.entitlements, community: true }
-				},
-				versionOverrides: { hasValidLicense: true, community: true }
-			});
-
-			await expect
-				.element(page.getByRole('heading', { name: 'Upgrade to Obot Enterprise', exact: true }))
-				.toBeVisible();
-			await expect.element(page.getByRole('link', { name: /Contact Us/i })).toBeVisible();
-			await expect
-				.element(page.getByRole('heading', { name: 'Upgrade to Obot Community', exact: true }))
 				.not.toBeInTheDocument();
+			await expect.element(page.getByRole('link', { name: /Contact Us/i })).not.toBeInTheDocument();
 			await expect.element(page.getByLabelText('Name', { exact: true })).not.toBeInTheDocument();
 		});
 
@@ -323,42 +304,6 @@ describe('Platform Page', () => {
 			await expect
 				.element(page.getByRole('button', { name: 'Delete License', exact: true }))
 				.not.toBeInTheDocument();
-		});
-
-		it('lets the user register for a community license when none is present', async () => {
-			const createCommunityLicense = vi.fn();
-			worker.use(
-				http.post('/api/license/community', async ({ request }) => {
-					createCommunityLicense(await request.json());
-					return HttpResponse.json({
-						...getLicenseResponse,
-						licenseKey: 'community-license-key',
-						entitlements: { ...getLicenseResponse.entitlements, community: true }
-					});
-				})
-			);
-
-			await renderPlatformPage({ license: getLicenseResponse });
-			await expect.element(page.getByLabelText('Name', { exact: true })).toBeVisible();
-			await expect.element(page.getByLabelText('Email', { exact: true })).toBeVisible();
-			await expect.element(page.getByLabelText('Company', { exact: false })).toBeVisible();
-			await expect
-				.element(page.getByRole('button', { name: 'Delete License', exact: true }))
-				.not.toBeInTheDocument();
-
-			await page.getByLabelText('Name', { exact: true }).fill('Ada Lovelace');
-			await page.getByLabelText('Email', { exact: true }).fill('ada@example.com');
-			await page.getByLabelText('Company', { exact: false }).fill('Analytical Engine');
-			await page.getByRole('button', { name: 'Register', exact: true }).click();
-
-			await vi.waitFor(() => {
-				expect(createCommunityLicense).toHaveBeenCalledWith({
-					name: 'Ada Lovelace',
-					email: 'ada@example.com',
-					company: 'Analytical Engine'
-				});
-				expect(navigation.reloadPage).toHaveBeenCalledOnce();
-			});
 		});
 
 		it('validating deleting an existing license', async () => {
@@ -402,9 +347,10 @@ describe('Platform Page', () => {
 				}
 			});
 
+			await expect.element(page.getByText(/You're almost at the user limit/).first()).toBeVisible();
 			await expect
-				.element(page.getByText(/Contact us to upgrade to Obot Enterprise/i))
-				.toBeVisible();
+				.element(page.getByRole('link', { name: /upgrade to Obot Enterprise/i }))
+				.not.toBeInTheDocument();
 			await expect.element(page.getByLabelText('Users: 90 of 100', { exact: true })).toBeVisible();
 		});
 
@@ -427,9 +373,10 @@ describe('Platform Page', () => {
 				}
 			});
 
+			await expect.element(page.getByText(/You're at the user limit/).first()).toBeVisible();
 			await expect
-				.element(page.getByText(/Contact us to upgrade to Obot Enterprise/i))
-				.toBeVisible();
+				.element(page.getByRole('link', { name: /upgrade to Obot Enterprise/i }))
+				.not.toBeInTheDocument();
 			await expect.element(page.getByLabelText('Users: 100 of 100', { exact: true })).toBeVisible();
 		});
 

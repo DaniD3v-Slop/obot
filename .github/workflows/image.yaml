@@ -41,7 +41,7 @@ jobs:
           build-args: |
             BASE_IMAGE=ghcr.io/obot-platform/obot/base:latest
             MODEL_DATA_URL=https://upgrade-server.obot.ai/v1/model-data
-            PROVIDERS_IMAGE=ghcr.io/danid3v-slop/providers:sha-185eb585823184babb6702cda3be3a97e47e147e@sha256:5b7e967cb45ca06a2f17aff7752669bbbb329cbf535c002af02ebf8d710091e4
+            PROVIDERS_IMAGE=ghcr.io/danid3v-slop/providers:sha-7a21dd385cb4e87d946247cbd56035a2bdea7f47@sha256:540d90bddfbba699255868feb653e3fe94572c73e1e6509950c14b11617ffe01
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

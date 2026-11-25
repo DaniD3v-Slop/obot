@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SIGNED_OUT_PARAM } from '$lib/auth/autoSignIn';
 	import Confirm from '$lib/components/Confirm.svelte';
 	import ConfirmDeleteAccount from '$lib/components/ConfirmDeleteAccount.svelte';
 	import Toggle from '$lib/components/Toggle.svelte';
@@ -44,7 +45,7 @@
 		try {
 			await UserService.deleteProfile();
 			clearProductAnalyticsConsentDeferral();
-			goto('/oauth2/sign_out?rd=/');
+			goto(`/oauth2/sign_out?rd=${encodeURIComponent(`/?${SIGNED_OUT_PARAM}`)}`);
 		} catch (error) {
 			console.error('Failed to delete account:', error);
 			errors.items.push(new Error(m.account_delete_failed()));

@@ -1,3 +1,4 @@
+import { SIGNED_OUT_PARAM, singleProviderStartURL } from '$lib/auth/autoSignIn';
 import { CommonAuthProviderIds } from '$lib/constants';
 import { Group, UserService, type AuthProvider } from '$lib/services';
 import type { PageLoad } from './$types';
@@ -37,6 +38,13 @@ export const load: PageLoad = async ({ fetch, url, parent }) => {
 	if (authProviders.length === 1 && authProviders[0].id === CommonAuthProviderIds.LOCAL) {
 		const rd = url.searchParams.get('rd') || url.pathname;
 		throw redirect(302, '/login/local?rd=' + encodeURIComponent(rd));
+	}
+
+	if (!url.searchParams.has(SIGNED_OUT_PARAM)) {
+		const startURL = singleProviderStartURL(authProviders, url.searchParams.get('rd') || '/');
+		if (startURL) {
+			throw redirect(302, startURL);
+		}
 	}
 
 	return {

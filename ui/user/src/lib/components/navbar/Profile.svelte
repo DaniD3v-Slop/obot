@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { tooltip } from '$lib/actions/tooltip.svelte';
+	import { SIGNED_OUT_PARAM } from '$lib/auth/autoSignIn';
 	import LanguageSelect from '$lib/components/LanguageSelect.svelte';
 	import Menu from '$lib/components/navbar/Menu.svelte';
 	import ProfileIcon from '$lib/components/profile/ProfileIcon.svelte';
@@ -82,7 +83,7 @@
 			localStorage.removeItem(SEEN_SPLASH_DIALOG_KEY);
 			clearProductAnalyticsConsentDeferral();
 			await AdminService.bootstrapLogout();
-			window.location.href = `/oauth2/sign_out?rd=${profile.current.isBootstrapUser?.() ? '/admin' : '/'}`;
+			window.location.href = `/oauth2/sign_out?rd=${profile.current.isBootstrapUser?.() ? '/admin' : encodeURIComponent(`/?${SIGNED_OUT_PARAM}`)}`;
 		} catch (err) {
 			console.error(err);
 		}
@@ -92,7 +93,7 @@
 		try {
 			localStorage.removeItem(SEEN_SPLASH_DIALOG_KEY);
 			clearProductAnalyticsConsentDeferral();
-			window.location.href = '/oauth2/sign_out?rd=/';
+			window.location.href = `/oauth2/sign_out?rd=${encodeURIComponent(`/?${SIGNED_OUT_PARAM}`)}`;
 		} catch (err) {
 			console.error(err);
 		}
